@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>けいさんドリル</title>
+<style>
+  :root{
+    /* ===== 共通トークン ===== */
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --font-display: 'Klee One', 'Yomogi', sans-serif;
+    --font-ui: 'M PLUS Rounded 1c', sans-serif;
+    --font-mono: 'DotGothic16', monospace;
+
+    /* ===== プリンセステーマ ===== */
+    --p-bg-1: #fff3f8;
+    --p-bg-2: #f7e9ff;
+    --p-accent: #ff7fb3;
+    --p-accent-2: #ffd166;
+    --p-deep: #b15ccf;
+    --p-text: #6b4a73;
+    --p-card: #fffdfb;
+
+    /* ===== モンスターカードテーマ ===== */
+    --m-bg-1: #0c1224;
+    --m-bg-2: #131c36;
+    --m-accent: #39ffb0;
+    --m-accent-2: #ff5e7e;
+    --m-deep: #2de0ff;
+    --m-text: #e8f4ff;
+    --m-card: #1a2540;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family: var(--font-ui);
+    overflow-x:hidden;
+    width:100%;
+    min-height:100vh;
+  }
+
+  .screen{
+    min-height:100vh;
+    width:100%;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    position:relative;
+    transition: opacity .3s ease;
+  }
+  .screen.active{display:flex;}
+
+  /* =========================================================
+     画面1: テーマ選択
+  ========================================================= */
+  #screen-select{
+    background:
+      radial-gradient(circle at 15% 10%, rgba(255,255,255,.6), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(255,255,255,.4), transparent 45%),
+      linear-gradient(160deg, var(--p-bg-1), var(--p-bg-2) 60%, #e8d9ff);
+    padding: 32px 20px 48px;
+    justify-content:flex-start;
+  }
+
+  .select-header{
+    text-align:center;
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+  .select-header .eyebrow{
+    font-family: var(--font-ui);
+    font-size: 13px;
+    letter-spacing: .12em;
+    color: var(--p-deep);
+    font-weight:700;
+    opacity:.75;
+  }
+  .select-header h1{
+    font-family: var(--font-display);
+    font-size: clamp(26px, 7vw, 34px);
+    color: #7a4e8a;
+    margin: 4px 0 0;
+    text-shadow: 0 2px 0 rgba(255,255,255,.7);
+  }
+  .select-header p{
+    margin: 10px 0 0;
+    color: var(--p-text);
+    font-size: 14px;
+    opacity:.85;
+  }
+
+  .theme-grid{
+    width:100%;
+    max-width: 460px;
+    display:flex;
+    flex-direction:column;
+    gap: 22px;
+    margin-top: 28px;
+    padding: 0 4px;
+  }
+
+  .theme-card{
+    position:relative;
+    border:none;
+    border-radius: var(--radius-lg);
+    padding: 22px 20px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    cursor:pointer;
+    text-align:left;
+    font-family:inherit;
+    overflow:hidden;
+    transform: translateZ(0);
+    transition: transform .18s ease, box-shadow .18s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .theme-card:active{ transform: scale(.97); }
+
+  .theme-card.princess{
+    background: linear-gradient(135deg, #ffe3f0, #ffd0e8 55%, #ffc6e6);
+    box-shadow: 0 10px 0 #f2a9cf, 0 14px 22px rgba(200,100,160,.28);
+    color: #7a3f63;
+  }
+  .theme-card.monster{
+    background: linear-gradient(135deg, #1c2746, #16203c 55%, #101830);
+    box-shadow: 0 10px 0 #06101f, 0 14px 26px rgba(0,0,0,.45);
+    color: var(--m-text);
+    border: 1px solid rgba(57,255,176,.25);
+  }
+
+  .theme-card .icon-wrap{
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 32px;
+  }
+  .theme-card.princess .icon-wrap{
+    background: radial-gradient(circle, #fff3f9, #ffd9ec);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.8);
+  }
+  .theme-card.monster .icon-wrap{
+    background: radial-gradient(circle, #1f3055, #0e1830);
+    box-shadow: inset 0 0 0 2px rgba(57,255,176,.4), 0 0 14px rgba(57,255,176,.35);
+  }
+
+  .theme-card .copy{flex:1;}
+  .theme-card .copy .label{
+    font-family: var(--font-display);
+    font-size: 21px;
+    display:block;
+    margin-bottom: 4px;
+  }
+  .theme-card.princess .copy .label{ color:#9c4d7e; }
+  .theme-card.monster .copy .label{ color: var(--m-accent); letter-spacing:.02em;}
+
+  .theme-card .copy .desc{
+    font-size: 12.5px;
+    line-height:1.5;
+    opacity:.85;
+    display:block;
+  }
+
+  .theme-card .chip-row{
+    margin-top:8px;
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .theme-card .chip{
+    font-size: 10.5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight:700;
+  }
+  .theme-card.princess .chip{ background:#fff; color:#c2588f; }
+  .theme-card.monster .chip{ background: rgba(57,255,176,.12); color: var(--m-accent); font-family: var(--font-mono); }
+
+  .theme-card .arrow{
+    font-size: 22px;
+    opacity:.5;
+  }
+
+  .sparkle{
+    position:absolute;
+    pointer-events:none;
+    font-size: 14px;
+  }
+
+  /* =========================================================
+     画面2: 計算ドリル
+  ========================================================= */
+  #screen-drill{
+    width:100%;
+    min-height:100vh;
+    padding: 18px 16px 28px;
+    justify-content:flex-start;
+    position:relative;
+  }
+
+  /* テーマ別の背景 */
+  body.theme-princess #screen-drill{
+    background: linear-gradient(170deg, #fff0f7 0%, #ffe2f1 35%, #f3d9ff 100%);
+  }
+  body.theme-monster #screen-drill{
+    background:
+      radial-gradient(circle at 20% 0%, rgba(57,255,176,.08), transparent 50%),
+      radial-gradient(circle at 100% 30%, rgba(45,224,255,.08), transparent 45%),
+      linear-gradient(170deg, #0a0f1f 0%, #0e1630 60%, #0a0f1f 100%);
+  }
+
+  .drill-topbar{
+    width:100%;
+    max-width: 480px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 8px;
+  }
+
+  .shop-btn{
+    flex: 1 1 auto;
+    min-width: 0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 6px;
+    border:none;
+    border-radius: 999px;
+    padding: 9px 12px;
+    font-family: var(--font-ui);
+    font-weight: 800;
+    font-size: 12.5px;
+    cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .shop-btn-icon{ font-size: 15px; flex:0 0 auto; }
+  body.theme-princess .shop-btn{
+    background: linear-gradient(135deg, #ffd9ec, #ffc6e6);
+    color: #9c4d7e;
+    box-shadow: 0 4px 0 #f0a9cf;
+  }
+  body.theme-princess .shop-btn:active{ box-shadow: 0 1px 0 #f0a9cf; transform: translateY(2px); }
+  body.theme-monster .shop-btn{
+    background: rgba(57,255,176,.1);
+    color: var(--m-accent);
+    border: 1px solid rgba(57,255,176,.35);
+    font-family: var(--font-mono);
+  }
+  body.theme-monster .shop-btn:active{ background: rgba(57,255,176,.22); }
+
+  .back-btn{
+    border:none;
+    background: rgba(255,255,255,.5);
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    font-size: 18px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  body.theme-monster .back-btn{
+    background: rgba(255,255,255,.08);
+    color: var(--m-text);
+  }
+
+  .coin-counter{
+    flex: 0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding: 6px 12px 6px 8px;
+    border-radius: 999px;
+    font-weight:800;
+    font-size: 14px;
+    white-space:nowrap;
+  }
+  body.theme-princess .coin-counter{
+    background: #fff;
+    color: #b8762a;
+    box-shadow: 0 4px 0 #ffd9a0;
+  }
+  body.theme-monster .coin-counter{
+    background: rgba(255,255,255,.06);
+    color: #ffd166;
+    border: 1px solid rgba(255,209,102,.3);
+    font-family: var(--font-mono);
+  }
+  .coin-counter .coin-icon{ font-size: 18px; }
+  .coin-counter span.count{ position:relative; min-width: 22px; display:inline-block;}
+
+  .progress-pill{
+    margin: 16px auto 0;
+    width:100%;
+    max-width: 480px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .progress-track{
+    flex:1;
+    height: 10px;
+    border-radius: 999px;
+    overflow:hidden;
+    background: rgba(0,0,0,.06);
+  }
+  body.theme-monster .progress-track{ background: rgba(255,255,255,.08); }
+  .progress-fill{
+    height:100%;
+    width: 0%;
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+  body.theme-princess .progress-fill{ background: linear-gradient(90deg, #ff9fc6, #ffd166); }
+  body.theme-monster .progress-fill{ background: linear-gradient(90deg, var(--m-deep), var(--m-accent)); box-shadow: 0 0 8px rgba(57,255,176,.6); }
+  .progress-pill .progress-label{
+    font-size: 11px;
+    font-weight:700;
+    opacity:.7;
+    font-family: var(--font-mono);
+  }
+  body.theme-princess .progress-pill .progress-label{ color:#9c4d7e; font-family: var(--font-ui);}
+  body.theme-monster .progress-pill .progress-label{ color: var(--m-accent); }
+
+  .question-stage{
+    width:100%;
+    max-width: 480px;
+    margin-top: 26px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .question-card{
+    width:100%;
+    border-radius: var(--radius-lg);
+    padding: 30px 20px 26px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  body.theme-princess .question-card{
+    background: var(--p-card);
+    box-shadow: 0 12px 0 #f0c7e0, 0 18px 30px rgba(200,120,170,.25);
+    border: 2px dashed #ffc2dd;
+  }
+  body.theme-monster .question-card{
+    background: linear-gradient(160deg, var(--m-card), #101a33);
+    box-shadow: 0 0 0 2px rgba(57,255,176,.25), 0 16px 30px rgba(0,0,0,.5);
+  }
+  body.theme-monster .question-card::before{
+    content:'';
+    position:absolute; inset:8px;
+    border: 1px solid rgba(57,255,176,.15);
+    border-radius: 20px;
+    pointer-events:none;
+  }
+
+  .card-tag{
+    font-size: 11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    margin-bottom: 14px;
+    display:inline-block;
+  }
+  body.theme-princess .card-tag{ color:#d98bb3; }
+  body.theme-monster .card-tag{ color: var(--m-deep); font-family: var(--font-mono); }
+
+  .equation{
+    font-family: var(--font-display);
+    font-size: clamp(40px, 13vw, 56px);
+    font-weight: 700;
+    line-height:1.1;
+    letter-spacing: .02em;
+  }
+  body.theme-princess .equation{ color: #8a4a78; }
+  body.theme-monster .equation{ color: #fff; text-shadow: 0 0 16px rgba(57,255,176,.35); }
+
+  .equation .q-mark{
+    display:inline-block;
+    min-width: 56px;
+    position:relative;
+  }
+  body.theme-princess .equation .q-mark{ color: var(--p-accent); }
+  body.theme-monster .equation .q-mark{ color: var(--m-accent); }
+
+  .equation .q-mark.answered{
+    transition: color .15s ease;
+  }
+
+  .word-problem-hint{
+    margin-top:10px;
+    font-size: 13px;
+    opacity:.7;
+    line-height:1.5;
+  }
+  body.theme-princess .word-problem-hint{ color: var(--p-text); }
+  body.theme-monster .word-problem-hint{ color: #9fb3d6; }
+
+  .feedback-row{
+    height: 26px;
+    margin-top: 12px;
+    font-weight:800;
+    font-size: 14px;
+    opacity:0;
+    transition: opacity .2s ease;
+  }
+  .feedback-row.show{ opacity:1; }
+  .feedback-row.correct{ color:#3bbf6d; }
+  .feedback-row.wrong{ color:#ff6868; }
+  body.theme-monster .feedback-row.correct{ color: var(--m-accent); }
+
+  .num-grid{
+    width:100%;
+    max-width: 480px;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .num-btn{
+    border:none;
+    aspect-ratio: 1.5/1;
+    border-radius: var(--radius-md);
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight:700;
+    cursor:pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .num-btn:active{ transform: scale(.93); }
+
+  body.theme-princess .num-btn{
+    background: #fff;
+    color: #9c4d7e;
+    box-shadow: 0 6px 0 #f3c9de;
+  }
+  body.theme-princess .num-btn:active{ box-shadow: 0 2px 0 #f3c9de; }
+
+  body.theme-monster .num-btn{
+    background: rgba(255,255,255,.04);
+    color: var(--m-text);
+    border: 1px solid rgba(57,255,176,.25);
+    box-shadow: 0 0 0 rgba(57,255,176,0);
+  }
+  body.theme-monster .num-btn:active{
+    background: rgba(57,255,176,.12);
+    box-shadow: 0 0 14px rgba(57,255,176,.4);
+  }
+
+  .num-btn.correct-flash{
+    animation: flashOk .5s ease;
+  }
+  body.theme-princess .num-btn.correct-flash{ background:#ffe8b8 !important; }
+  body.theme-monster .num-btn.correct-flash{ background: rgba(57,255,176,.3) !important; }
+  @keyframes flashOk{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.08);}
+    100%{transform:scale(1);}
+  }
+  .num-btn.wrong-flash{ animation: shake .35s ease; }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  /* =========================================================
+     画面3: ごほうびショップ
+  ========================================================= */
+  #screen-shop{
+    width:100%;
+    min-height:100vh;
+    padding: 18px 16px 40px;
+    justify-content:flex-start;
+  }
+  body.theme-princess #screen-shop{
+    background: linear-gradient(170deg, #fff0f7 0%, #ffe2f1 35%, #f3d9ff 100%);
+  }
+  body.theme-monster #screen-shop{
+    background:
+      radial-gradient(circle at 20% 0%, rgba(57,255,176,.08), transparent 50%),
+      radial-gradient(circle at 100% 30%, rgba(45,224,255,.08), transparent 45%),
+      linear-gradient(170deg, #0a0f1f 0%, #0e1630 60%, #0a0f1f 100%);
+  }
+
+  .shop-topbar{ justify-content:space-between; }
+  .shop-title{
+    flex: 1 1 auto;
+    text-align:center;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight:700;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  body.theme-princess .shop-title{ color:#9c4d7e; }
+  body.theme-monster .shop-title{ color: var(--m-accent); font-family: var(--font-mono); letter-spacing:.04em; }
+
+  .shop-sub{
+    width:100%;
+    max-width:480px;
+    margin: 14px auto 0;
+    text-align:center;
+    font-size: 13px;
+  }
+  body.theme-princess .shop-sub{ color: var(--p-text); opacity:.8; }
+  body.theme-monster .shop-sub{ color:#9fb3d6; opacity:.85; }
+
+  .shop-grid{
+    width:100%;
+    max-width: 480px;
+    margin: 18px auto 0;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .shop-item{
+    border-radius: var(--radius-md);
+    padding: 16px 12px 14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    position:relative;
+    transition: transform .15s ease;
+  }
+  body.theme-princess .shop-item{
+    background: var(--p-card);
+    box-shadow: 0 8px 0 #f3c9de, 0 12px 20px rgba(200,120,170,.2);
+    border: 2px dashed #ffc2dd;
+  }
+  body.theme-monster .shop-item{
+    background: linear-gradient(160deg, var(--m-card), #101a33);
+    box-shadow: 0 0 0 2px rgba(57,255,176,.2), 0 12px 22px rgba(0,0,0,.45);
+  }
+
+  .shop-item .item-icon{
+    font-size: 40px;
+    line-height:1;
+    margin-bottom: 8px;
+  }
+  .shop-item .item-name{
+    font-family: var(--font-display);
+    font-size: 14.5px;
+    font-weight:700;
+    line-height:1.35;
+    min-height: 38px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  body.theme-princess .shop-item .item-name{ color:#8a4a78; }
+  body.theme-monster .shop-item .item-name{ color: var(--m-text); }
+
+  .shop-item .item-price{
+    font-size: 13px;
+    font-weight:800;
+    margin: 8px 0 12px;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  body.theme-princess .shop-item .item-price{ color:#b8762a; }
+  body.theme-monster .shop-item .item-price{ color:#ffd166; font-family: var(--font-mono); }
+
+  .buy-btn{
+    width:100%;
+    border:none;
+    border-radius: 999px;
+    padding: 9px 0;
+    font-family: var(--font-ui);
+    font-weight:800;
+    font-size: 12.5px;
+    cursor:pointer;
+    transition: transform .12s ease;
+  }
+  .buy-btn:active{ transform: scale(.95); }
+
+  body.theme-princess .buy-btn{
+    background: linear-gradient(135deg, var(--p-accent), #ff5fa0);
+    color:#fff;
+    box-shadow: 0 4px 0 #d94f8c;
+  }
+  body.theme-monster .buy-btn{
+    background: linear-gradient(135deg, var(--m-deep), var(--m-accent));
+    color: #06101f;
+    box-shadow: 0 0 14px rgba(57,255,176,.4);
+  }
+
+  /* コイン不足で買えない状態 */
+  .buy-btn.disabled{
+    cursor:default;
+    opacity:.55;
+  }
+  body.theme-princess .buy-btn.disabled{
+    background: #f1dbe8;
+    color: #b893a8;
+    box-shadow:none;
+  }
+  body.theme-monster .buy-btn.disabled{
+    background: rgba(255,255,255,.05);
+    color: #5c6c8c;
+    box-shadow:none;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+
+  /* 購入済み（売り切れ） */
+  .shop-item.owned{ position:relative; }
+  .shop-item.owned::after{
+    content:'';
+    position:absolute; inset:0;
+    border-radius: var(--radius-md);
+    pointer-events:none;
+  }
+  body.theme-princess .shop-item.owned::after{ background: rgba(255,255,255,.35); }
+  body.theme-monster .shop-item.owned::after{ background: rgba(10,15,30,.45); }
+
+  .owned-badge{
+    width:100%;
+    border-radius:999px;
+    padding: 9px 0;
+    font-size: 12.5px;
+    font-weight:800;
+    text-align:center;
+  }
+  body.theme-princess .owned-badge{ background:#fff; color:#c2588f; }
+  body.theme-monster .owned-badge{ background: rgba(57,255,176,.12); color: var(--m-accent); font-family: var(--font-mono); }
+
+  /* コインが足りない時のシェイク＋メッセージ */
+  .shop-item.shake-insufficient{ animation: shopShake .4s ease; }
+  @keyframes shopShake{
+    0%,100%{ transform: translateX(0); }
+    20%{ transform: translateX(-7px); }
+    40%{ transform: translateX(6px); }
+    60%{ transform: translateX(-4px); }
+    80%{ transform: translateX(3px); }
+  }
+
+  .shop-toast{
+    position:fixed;
+    bottom: 28px;
+    left:50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-weight:800;
+    font-size: 13.5px;
+    white-space:nowrap;
+    opacity:0;
+    transition: opacity .25s ease, transform .25s ease;
+    z-index: 70;
+    pointer-events:none;
+  }
+  .shop-toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+  body.theme-princess .shop-toast{
+    background:#fff; color:#d9587a;
+    box-shadow: 0 8px 20px rgba(200,100,150,.3);
+  }
+  body.theme-monster .shop-toast{
+    background:#1a2540; color:#ff5e7e;
+    border: 1px solid rgba(255,94,126,.4);
+    box-shadow: 0 8px 20px rgba(0,0,0,.5);
+  }
+
+  @media (max-width: 360px){
+    .shop-title{ font-size: 15px; }
+  }
+
+  /* =========================================================
+     コイン獲得演出（テーマ別オーバーレイ）
+  ========================================================= */
+  .reward-overlay{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    z-index: 50;
+    opacity:0;
+  }
+  .reward-overlay.fire{
+    animation: overlayFade 1.1s ease forwards;
+  }
+  @keyframes overlayFade{
+    0%{opacity:0;}
+    12%{opacity:1;}
+    78%{opacity:1;}
+    100%{opacity:0;}
+  }
+
+  .reward-burst{
+    position:relative;
+    width: 220px;
+    height: 220px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* プリンセス: 魔法のキラキラ輝き */
+  body.theme-princess .reward-burst .core{
+    font-size: 64px;
+    transform: scale(0);
+  }
+  body.theme-princess .reward-overlay.fire .core{
+    animation: princessPop 1.1s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes princessPop{
+    0%{ transform: scale(0) rotate(-15deg); }
+    35%{ transform: scale(1.25) rotate(8deg); }
+    55%{ transform: scale(1) rotate(0deg); }
+    100%{ transform: scale(1) rotate(0deg) translateY(-30px); opacity:0;}
+  }
+  .princess-spark{
+    position:absolute;
+    font-size: 20px;
+    opacity:0;
+    color: var(--p-accent-2);
+  }
+  body.theme-princess .reward-overlay.fire .princess-spark{
+    animation: sparkOut 0.9s ease forwards;
+  }
+  @keyframes sparkOut{
+    0%{ opacity:0; transform: translate(0,0) scale(.3) rotate(0deg); }
+    25%{ opacity:1; }
+    100%{ opacity:0; transform: translate(var(--tx), var(--ty)) scale(1.1) rotate(180deg); }
+  }
+  .reward-label.princess-label{
+    position:absolute;
+    bottom: -36px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(180,80,150,.6);
+    white-space:nowrap;
+    opacity:0;
+  }
+  body.theme-princess .reward-overlay.fire .reward-label{
+    animation: labelRise 1.1s ease forwards;
+  }
+  @keyframes labelRise{
+    0%{opacity:0; transform: translateY(10px);}
+    20%{opacity:1; transform: translateY(0);}
+    80%{opacity:1;}
+    100%{opacity:0; transform: translateY(-8px);}
+  }
+
+  /* モンスター: カードがバチッと光る */
+  body.theme-monster .reward-burst .mon-card{
+    width: 120px;
+    height: 160px;
+    border-radius: 14px;
+    background: linear-gradient(160deg, #1a2540, #0d1530);
+    border: 2px solid var(--m-accent);
+    box-shadow: 0 0 0px rgba(57,255,176,0);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 48px;
+    transform: scale(.4) rotateY(90deg);
+  }
+  body.theme-monster .reward-overlay.fire .mon-card{
+    animation: cardFlip 1.05s cubic-bezier(.2,.9,.3,1.2) forwards;
+  }
+  @keyframes cardFlip{
+    0%{ transform: scale(.4) rotateY(90deg); box-shadow: 0 0 0 rgba(57,255,176,0);}
+    45%{ transform: scale(1.08) rotateY(0deg); box-shadow: 0 0 40px rgba(57,255,176,.9);}
+    70%{ transform: scale(1) rotateY(0deg); box-shadow: 0 0 24px rgba(57,255,176,.6);}
+    100%{ transform: scale(1) rotateY(0deg) translateY(-20px); box-shadow: 0 0 0 rgba(57,255,176,0); opacity:0;}
+  }
+  .mon-ray{
+    position:absolute;
+    width: 3px;
+    height: 90px;
+    background: linear-gradient(to top, transparent, var(--m-accent));
+    opacity:0;
+    transform-origin: bottom center;
+  }
+  body.theme-monster .reward-overlay.fire .mon-ray{
+    animation: rayPulse .8s ease forwards;
+  }
+  @keyframes rayPulse{
+    0%{ opacity:0; transform: rotate(var(--rot)) scaleY(.3);}
+    40%{ opacity:.9; transform: rotate(var(--rot)) scaleY(1);}
+    100%{ opacity:0; transform: rotate(var(--rot)) scaleY(1.3);}
+  }
+  .reward-label.monster-label{
+    position:absolute;
+    bottom: -34px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--m-accent);
+    letter-spacing:.05em;
+    white-space:nowrap;
+    opacity:0;
+    text-shadow: 0 0 10px rgba(57,255,176,.6);
+  }
+  body.theme-monster .reward-overlay.fire .reward-label{
+    animation: labelRise 1.1s ease forwards;
+  }
+
+  /* コインがふわっとカウンターに飛ぶ用の小コイン */
+  .flying-coin{
+    position: fixed;
+    font-size: 22px;
+    z-index: 60;
+    pointer-events:none;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
+
+  @media (max-width: 360px){
+    .shop-btn span:last-child{ display:none; }
+    .shop-btn{ padding: 9px; aspect-ratio: 1; border-radius: 50%; }
+    .coin-counter span.coin-label{ display:none; }
+  }
+
+  @media (min-width: 560px){
+    .theme-grid{ max-width: 480px; }
+  }
+</style>
+</head>
+<body class="theme-princess">
+
+<!-- ===================== 画面1: テーマ選択 ===================== -->
+<section id="screen-select" class="screen active">
+  <div class="select-header">
+    <span class="eyebrow">ようこそ！</span>
+    <h1>せかいを えらんでね</h1>
+    <p>すきな せかいで けいさんに チャレンジしよう</p>
+  </div>
+
+  <div class="theme-grid">
+    <button class="theme-card princess" data-theme="princess">
+      <span class="icon-wrap">👑</span>
+      <span class="copy">
+        <span class="label">プリンセスのお城</span>
+        <span class="desc">ドレスやティアラを集めながら、まほうの計算をしよう</span>
+        <span class="chip-row">
+          <span class="chip">ドレス収集</span>
+          <span class="chip">まほうのステッキ</span>
+        </span>
+      </span>
+      <span class="arrow">›</span>
+    </button>
+
+    <button class="theme-card monster" data-theme="monster">
+      <span class="icon-wrap">🐉</span>
+      <span class="copy">
+        <span class="label">モンスターカード図鑑</span>
+        <span class="desc">フィールドを冒険して、モンスターカードを集めよう</span>
+        <span class="chip-row">
+          <span class="chip">#カード収集</span>
+          <span class="chip">#進化アイテム</span>
+        </span>
+      </span>
+      <span class="arrow">›</span>
+    </button>
+  </div>
+</section>
+
+<!-- ===================== 画面2: 計算ドリル ===================== -->
+<section id="screen-drill" class="screen">
+  <div class="drill-topbar">
+    <button class="back-btn" id="backBtn" aria-label="せかい選択にもどる">‹</button>
+    <button class="shop-btn" id="shopBtn">
+      <span class="shop-btn-icon">🛍️</span>
+      <span>ショップへ行く</span>
+    </button>
+    <div class="coin-counter" id="coinCounterDrill">
+      <span class="coin-icon" id="coinIcon">🪙</span>
+      <span class="coin-label">コイン</span>
+      <span class="count" id="coinCount">0</span>
+    </div>
+  </div>
+
+  <div class="progress-pill">
+    <span class="progress-label" id="progressLabel">1 / 10 もん</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="question-stage">
+    <div class="question-card">
+      <span class="card-tag" id="cardTag">たしざん・1年生</span>
+      <div class="equation" id="equationText"><!-- JSで生成 --></div>
+      <div class="word-problem-hint" id="wordHint"></div>
+      <div class="feedback-row" id="feedbackRow"></div>
+    </div>
+
+    <div class="num-grid" id="numGrid"><!-- JSで生成 --></div>
+  </div>
+</section>
+
+<!-- ===================== 画面3: ごほうびショップ ===================== -->
+<section id="screen-shop" class="screen">
+  <div class="drill-topbar shop-topbar">
+    <button class="back-btn" id="shopBackBtn" aria-label="ドリルにもどる">‹</button>
+    <span class="shop-title" id="shopTitle">ごほうびショップ</span>
+    <div class="coin-counter" id="coinCounterShop">
+      <span class="coin-icon" id="coinIconShop">🪙</span>
+      <span class="coin-label">コイン</span>
+      <span class="count" id="coinCountShop">0</span>
+    </div>
+  </div>
+
+  <p class="shop-sub" id="shopSub">コインを つかって アイテムを てにいれよう！</p>
+
+  <div class="shop-grid" id="shopGrid"><!-- JSで生成 --></div>
+</section>
+
+<!-- コイン獲得演出オーバーレイ -->
+<div class="reward-overlay" id="rewardOverlay"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ 状態管理 ============ */
+  const state = {
+    theme: 'princess',
+    coins: 0,
+    questionIndex: 0,
+    totalQuestions: 10,
+    currentAnswer: null,
+    locked: false,
+    // テーマごとに購入済みアイテムIDを保持（テーマを切り替えても保持される想定）
+    purchased: { princess: new Set(), monster: new Set() }
+  };
+
+  const els = {
+    screenSelect: document.getElementById('screen-select'),
+    screenDrill: document.getElementById('screen-drill'),
+    screenShop: document.getElementById('screen-shop'),
+    body: document.body,
+    backBtn: document.getElementById('backBtn'),
+    shopBtn: document.getElementById('shopBtn'),
+    shopBackBtn: document.getElementById('shopBackBtn'),
+    coinCount: document.getElementById('coinCount'),
+    coinIcon: document.getElementById('coinIcon'),
+    coinCountShop: document.getElementById('coinCountShop'),
+    coinIconShop: document.getElementById('coinIconShop'),
+    shopTitle: document.getElementById('shopTitle'),
+    shopSub: document.getElementById('shopSub'),
+    shopGrid: document.getElementById('shopGrid'),
+    progressLabel: document.getElementById('progressLabel'),
+    progressFill: document.getElementById('progressFill'),
+    equationText: document.getElementById('equationText'),
+    wordHint: document.getElementById('wordHint'),
+    cardTag: document.getElementById('cardTag'),
+    feedbackRow: document.getElementById('feedbackRow'),
+    numGrid: document.getElementById('numGrid'),
+    rewardOverlay: document.getElementById('rewardOverlay')
+  };
+
+  /* ============ テーマ選択 ============ */
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const theme = card.dataset.theme;
+      selectTheme(theme);
+    });
+  });
+
+  function selectTheme(theme){
+    state.theme = theme;
+    els.body.classList.remove('theme-princess', 'theme-monster');
+    els.body.classList.add('theme-' + theme);
+    els.coinIcon.textContent = theme === 'princess' ? '🪙' : '💎';
+    els.cardTag.textContent = theme === 'princess' ? 'たしざん・1年生' : 'BATTLE 01 / たしざん';
+
+    state.coins = 0;
+    state.questionIndex = 0;
+    syncCoinDisplays();
+
+    goToScreen('drill');
+    nextQuestion();
+  }
+
+  els.backBtn.addEventListener('click', () => {
+    goToScreen('select');
+  });
+
+  els.shopBtn.addEventListener('click', () => {
+    openShop();
+  });
+
+  els.shopBackBtn.addEventListener('click', () => {
+    goToScreen('drill');
+  });
+
+  function goToScreen(name){
+    els.screenSelect.classList.toggle('active', name === 'select');
+    els.screenDrill.classList.toggle('active', name === 'drill');
+    els.screenShop.classList.toggle('active', name === 'shop');
+  }
+
+  /* ============ 問題生成（1年生：繰り上がりたしざん 和11〜18） ============ */
+  // 仕様: 1年生の繰り上がり足し算なら、和が11〜18になるようにA+Bを生成
+  function generateQuestion(){
+    const sum = Math.floor(Math.random() * (18 - 11 + 1)) + 11; // 11〜18
+    // Aは2〜9の範囲、Bが1〜9になるように調整
+    const minA = Math.max(2, sum - 9);
+    const maxA = Math.min(9, sum - 1);
+    const a = Math.floor(Math.random() * (maxA - minA + 1)) + minA;
+    const b = sum - a;
+    return { a, b, answer: sum };
+  }
+
+  // 文章題テンプレート（テーマに応じて名詞を切り替え）
+  const wordTemplates = {
+    princess: [
+      (a,b) => `ティアラが ${a}こ、リボンが ${b}こ あります。あわせて なんこ？`,
+      (a,b) => `おしろの まどが ${a}まい、はなが ${b}こ さいています。あわせて いくつ？`
+    ],
+    monster: [
+      (a,b) => `フィールドに モンスターが ${a}たい、あとから ${b}たい あらわれた。あわせて なんたい？`,
+      (a,b) => `カードを ${a}まい もっていて、${b}まい あたらしく ひろった。あわせて なんまい？`
+    ]
+  };
+
+  function nextQuestion(){
+    if(state.questionIndex >= state.totalQuestions){
+      finishDrill();
+      return;
+    }
+    const q = generateQuestion();
+    state.currentAnswer = q.answer;
+    state.locked = false;
+
+    els.equationText.innerHTML = `${q.a} ＋ ${q.b} ＝ <span class="q-mark" id="qMark">？</span>`;
+
+    // 3問に1問くらいの割合で文章題ヒントを出す（雰囲気づけ・両画面共通仕様）
+    if(state.questionIndex % 3 === 1){
+      const templates = wordTemplates[state.theme];
+      const t = templates[Math.floor(Math.random()*templates.length)];
+      els.wordHint.textContent = t(q.a, q.b);
+    } else {
+      els.wordHint.textContent = '';
+    }
+
+    els.feedbackRow.className = 'feedback-row';
+    els.feedbackRow.textContent = '';
+
+    renderNumGrid(q.answer);
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const current = state.questionIndex + 1;
+    els.progressLabel.textContent = `${current} / ${state.totalQuestions} もん`;
+    const pct = (state.questionIndex / state.totalQuestions) * 100;
+    els.progressFill.style.width = pct + '%';
+  }
+
+  /* ============ 解答ボタン生成 ============ */
+  function renderNumGrid(correctAnswer){
+    const options = new Set([correctAnswer]);
+    while(options.size < 6){
+      const offset = Math.floor(Math.random() * 7) - 3; // -3〜+3
+      const candidate = correctAnswer + offset;
+      if(candidate >= 2 && candidate <= 20 && candidate !== correctAnswer){
+        options.add(candidate);
+      }
+    }
+    const shuffled = Array.from(options).sort(() => Math.random() - 0.5);
+
+    els.numGrid.innerHTML = '';
+    shuffled.forEach(num => {
+      const btn = document.createElement('button');
+      btn.className = 'num-btn';
+      btn.textContent = num;
+      btn.addEventListener('click', () => handleAnswer(num, btn));
+      els.numGrid.appendChild(btn);
+    });
+  }
+
+  /* ============ 解答処理 ============ */
+  function handleAnswer(selected, btnEl){
+    if(state.locked) return;
+
+    const qMark = document.getElementById('qMark');
+
+    if(selected === state.currentAnswer){
+      state.locked = true;
+      btnEl.classList.add('correct-flash');
+      qMark.textContent = selected;
+      qMark.classList.add('answered');
+
+      els.feedbackRow.textContent = state.theme === 'princess' ? 'やったね！ せいかい！' : 'クリア！ せいかい！';
+      els.feedbackRow.className = 'feedback-row show correct';
+
+      addCoin(btnEl);
+
+      setTimeout(() => {
+        state.questionIndex++;
+        nextQuestion();
+      }, 1100);
+    } else {
+      btnEl.classList.add('wrong-flash');
+      els.feedbackRow.textContent = 'もう一回 かんがえてみよう';
+      els.feedbackRow.className = 'feedback-row show wrong';
+      setTimeout(() => btnEl.classList.remove('wrong-flash'), 350);
+    }
+  }
+
+  /* ============ コイン獲得演出 ============ */
+  function addCoin(originEl){
+    state.coins++;
+    syncCoinDisplays();
+
+    // テーマ別オーバーレイ演出
+    if(state.theme === 'princess'){
+      firePrincessReward();
+    } else {
+      fireMonsterReward();
+    }
+
+    // 小さいコイン/ジェムがボタンからカウンターへ飛ぶ演出
+    flyToCounter(originEl);
+  }
+
+  function firePrincessReward(){
+    const overlay = els.rewardOverlay;
+    overlay.innerHTML = '';
+    overlay.className = 'reward-overlay';
+
+    const burst = document.createElement('div');
+    burst.className = 'reward-burst';
+
+    const core = document.createElement('div');
+    core.className = 'core';
+    core.textContent = '🪙';
+    burst.appendChild(core);
+
+    const sparkEmojis = ['✨','⭐','💗','✨','⭐'];
+    for(let i=0;i<8;i++){
+      const s = document.createElement('span');
+      s.className = 'princess-spark';
+      s.textContent = sparkEmojis[i % sparkEmojis.length];
+      const angle = (i / 8) * 360;
+      const dist = 70 + Math.random()*20;
+      const rad = angle * Math.PI / 180;
+      s.style.setProperty('--tx', (Math.cos(rad)*dist) + 'px');
+      s.style.setProperty('--ty', (Math.sin(rad)*dist) + 'px');
+      s.style.left = '50%';
+      s.style.top = '50%';
+      burst.appendChild(s);
+    }
+
+    const label = document.createElement('div');
+    label.className = 'reward-label princess-label';
+    label.textContent = 'コインを ゲットした！';
+    burst.appendChild(label);
+
+    overlay.appendChild(burst);
+    requestAnimationFrame(() => overlay.classList.add('fire'));
+    setTimeout(() => { overlay.className = 'reward-overlay'; overlay.innerHTML=''; }, 1150);
+  }
+
+  function fireMonsterReward(){
+    const overlay = els.rewardOverlay;
+    overlay.innerHTML = '';
+    overlay.className = 'reward-overlay';
+
+    const burst = document.createElement('div');
+    burst.className = 'reward-burst';
+
+    for(let i=0;i<6;i++){
+      const ray = document.createElement('div');
+      ray.className = 'mon-ray';
+      ray.style.setProperty('--rot', (i*60)+'deg');
+      burst.appendChild(ray);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'mon-card';
+    card.textContent = '💎';
+    burst.appendChild(card);
+
+    const label = document.createElement('div');
+    label.className = 'reward-label monster-label';
+    label.textContent = 'GET! ジェムを てにいれた！';
+    burst.appendChild(label);
+
+    overlay.appendChild(burst);
+    requestAnimationFrame(() => overlay.classList.add('fire'));
+    setTimeout(() => { overlay.className = 'reward-overlay'; overlay.innerHTML=''; }, 1150);
+  }
+
+  function flyToCounter(originEl){
+    const startRect = originEl.getBoundingClientRect();
+    const endRect = els.coinCount.getBoundingClientRect();
+
+    const coin = document.createElement('div');
+    coin.className = 'flying-coin';
+    coin.textContent = state.theme === 'princess' ? '🪙' : '💎';
+    coin.style.left = (startRect.left + startRect.width/2 - 11) + 'px';
+    coin.style.top = (startRect.top + startRect.height/2 - 11) + 'px';
+    document.body.appendChild(coin);
+
+    requestAnimationFrame(() => {
+      coin.style.transition = 'all .55s cubic-bezier(.3,.6,.4,1)';
+      coin.style.left = (endRect.left) + 'px';
+      coin.style.top = (endRect.top) + 'px';
+      coin.style.opacity = '0.2';
+      coin.style.fontSize = '12px';
+    });
+
+    setTimeout(() => coin.remove(), 600);
+  }
+
+  /* ============ ドリル終了 ============ */
+  function finishDrill(){
+    els.equationText.innerHTML = state.theme === 'princess' ? '🎉 クリア！ 🎉' : 'STAGE CLEAR!!';
+    els.wordHint.textContent = `ぜんぶ せいかい！ コインを ${state.coins}こ あつめたよ`;
+    els.feedbackRow.className = 'feedback-row';
+    els.numGrid.innerHTML = '';
+    els.progressFill.style.width = '100%';
+    els.progressLabel.textContent = `${state.totalQuestions} / ${state.totalQuestions} もん`;
+  }
+
+  /* ============================================================
+     ごほうびショップ
+  ============================================================ */
+  const shopCatalog = {
+    princess: [
+      { id: 'p-dress',  icon: '👗', name: 'ピンクのドレス',     price: 5  },
+      { id: 'p-tiara',  icon: '💎', name: 'クリスタルのティアラ', price: 10 },
+      { id: 'p-wand',   icon: '🪄', name: 'まほうのステッキ',   price: 15 },
+      { id: 'p-shoes',  icon: '👠', name: 'ガラスのくつ',       price: 8  },
+      { id: 'p-castle', icon: '🏰', name: 'ミニチュアのお城',   price: 20 },
+      { id: 'p-pony',   icon: '🦄', name: 'まほうのポニー',     price: 25 }
+    ],
+    monster: [
+      { id: 'm-slime',  icon: '🟢', name: 'スライムカード',     price: 5  },
+      { id: 'm-sword',  icon: '🗡️', name: 'ほのおの剣',        price: 10 },
+      { id: 'm-egg',    icon: '🥚', name: 'ドラゴンのたまご',   price: 15 },
+      { id: 'm-shield', icon: '🛡️', name: 'こうらのたて',       price: 8  },
+      { id: 'm-potion', icon: '🧪', name: 'パワーアップポーション', price: 12 },
+      { id: 'm-dragon', icon: '🐲', name: 'でんせつのドラゴン', price: 25 }
+    ]
+  };
+
+  function openShop(){
+    els.coinIconShop.textContent = state.theme === 'princess' ? '🪙' : '💎';
+    els.coinCountShop.textContent = state.coins;
+    els.shopTitle.textContent = state.theme === 'princess' ? 'ごほうびショップ' : 'カード＆アイテムショップ';
+    els.shopSub.textContent = state.theme === 'princess'
+      ? 'コインを つかって かわいい アイテムを てにいれよう！'
+      : 'ジェムを つかって レアアイテムを てにいれよう！';
+
+    renderShop();
+    goToScreen('shop');
+  }
+
+  function renderShop(){
+    const items = shopCatalog[state.theme];
+    const ownedSet = state.purchased[state.theme];
+
+    els.shopGrid.innerHTML = '';
+    items.forEach(item => {
+      const isOwned = ownedSet.has(item.id);
+      const canAfford = state.coins >= item.price;
+
+      const card = document.createElement('div');
+      card.className = 'shop-item' + (isOwned ? ' owned' : '');
+      card.dataset.itemId = item.id;
+
+      const coinGlyph = state.theme === 'princess' ? '🪙' : '💎';
+
+      card.innerHTML = `
+        <span class="item-icon">${item.icon}</span>
+        <span class="item-name">${item.name}</span>
+        <span class="item-price">${coinGlyph} ${item.price}</span>
+      `;
+
+      if(isOwned){
+        const badge = document.createElement('div');
+        badge.className = 'owned-badge';
+        badge.textContent = state.theme === 'princess' ? 'こうにゅう済み' : 'GET済み';
+        card.appendChild(badge);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'buy-btn' + (canAfford ? '' : ' disabled');
+        btn.textContent = canAfford ? 'こうにゅう' : 'たりない';
+        btn.addEventListener('click', () => handlePurchase(item, card, btn));
+        card.appendChild(btn);
+      }
+
+      els.shopGrid.appendChild(card);
+    });
+  }
+
+  function handlePurchase(item, cardEl, btnEl){
+    if(cardEl.classList.contains('owned')) return;
+
+    if(state.coins < item.price){
+      // コイン不足: カードを揺らしてメッセージを出す
+      cardEl.classList.remove('shake-insufficient');
+      requestAnimationFrame(() => cardEl.classList.add('shake-insufficient'));
+      setTimeout(() => cardEl.classList.remove('shake-insufficient'), 420);
+      showShopToast('コインが たりないよ！');
+      return;
+    }
+
+    // 購入成立
+    state.coins -= item.price;
+    state.purchased[state.theme].add(item.id);
+
+    syncCoinDisplays();
+    showShopToast(`${item.name} を てにいれた！`);
+    renderShop();
+  }
+
+  function showShopToast(message){
+    let toast = document.querySelector('.shop-toast');
+    if(!toast){
+      toast = document.createElement('div');
+      toast.className = 'shop-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.remove('show');
+    requestAnimationFrame(() => toast.classList.add('show'));
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 1600);
+  }
+
+  // ドリル画面・ショップ画面の両方のコイン表示をまとめて同期
+  function syncCoinDisplays(){
+    els.coinCount.textContent = state.coins;
+    els.coinCountShop.textContent = state.coins;
+  }
+
+})();
+</script>
+
+</body>
+</html>
